@@ -104,16 +104,16 @@ battle_img_label = Label(window, image=battle_img, bg="#FFDD57")
 battle_img_label.pack()
 
 # Create Disclaimer Frame (for the border)
-disclaimer_frame = Frame(window, bd=2, relief="solid", padx=10, pady=10)
+disclaimer_frame = Frame(window, bd=2, relief="solid", padx=10, pady=10, bg="black")
 disclaimer_frame.pack(pady=20)
 
-disclaimer_label = Label(disclaimer_frame, text="DISCLAIMER", font=('Arial', 30, 'bold'))
+disclaimer_label = Label(disclaimer_frame, text="DISCLAIMER", font=('Arial', 30, 'bold'), bg="black", fg="white" )
 disclaimer_label.pack()
 
-disclaimer_text = Label(disclaimer_frame, text="This Pokémon Battle Simulator is a fan-made project and is not affiliated with or endorsed by Nintendo, Game Freak, or The Pokémon Company. All Pokémon characters and related assets are the property of their respective owners. This simulator is created purely for entertainment purposes and is free to use. No copyright infringement is intended.", wraplength=400)
+disclaimer_text = Label(disclaimer_frame, text="This Pokémon Battle Simulator is a fan-made project and is not affiliated with or endorsed by Nintendo, Game Freak, or The Pokémon Company. All Pokémon characters and related assets are the property of their respective owners. This simulator is created purely for entertainment purposes and is free to use. No copyright infringement is intended.", wraplength=400, bg="black", fg="white" )
 disclaimer_text.pack()
 
-agree_button = Button(disclaimer_frame, text="AGREE", font=('Arial', 20), command=show_play_screen)
+agree_button = Button(disclaimer_frame, text="AGREE", font=('Arial', 15), command=show_play_screen)
 agree_button.pack(pady=20)
 
 window.mainloop()
