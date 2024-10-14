@@ -5,7 +5,7 @@ from models.pokemon import Pokemon  # Import the Pokemon model
 
 # window config
 window = Tk()
-window.geometry("700x500")
+window.geometry("700x500") #use 800x520 for windows
 window.title("PokemonBattleSimulator")
 window.config(background="#FFDD57")
 
@@ -76,9 +76,9 @@ def start_battle_screen(player_pokemon_name):
     # Display player's Pokémon back image
     if player_pokemon.name in pokemon_images:
         player_image_path = pokemon_images[player_pokemon.name]["back"]
-        player_image = PhotoImage(file=player_image_path).zoom(2, 2)  # Zoom to double the size
+        player_image = PhotoImage(file=player_image_path).zoom(2, 2)
         player_image_label = Label(window, image=player_image, bg="#FFDD57")
-        player_image_label.image = player_image  # Keep reference to prevent garbage collection
+        player_image_label.image = player_image
         player_image_label.place(x=80, y=200)  # Adjust placement for player's Pokémon
 
     # Right-bottom: Player's Pokémon and moves
@@ -97,16 +97,16 @@ def start_battle_screen(player_pokemon_name):
 
     # "What will [Pokémon] do?" label on the left
     action_label = Label(window, text=f"What will {player_pokemon.name} do?", font=('Arial', 14), bg="#FFDD57", fg="black")
-    action_label.place(x=50, y=400)  # Adjusting placement to the left side
+    action_label.place(x=50, y=400)
 
     # Moves as buttons for the player Pokémon
     moves = Pokemon.get_moves_for_pokemon(player_pokemon_name)
     move_buttons = []  # Reset the move buttons list
 
-    # Add move buttons dynamically (use 'pp' for both current and max PP, but store max_pp separately)
+    # Add move buttons dynamically
     for idx, move in enumerate(moves):
         move['max_pp'] = move['pp']  # Store the maximum PP
-        move_button = Button(move_section, text=f"{move['move_name']}\nPP: {move['pp']}/{move['max_pp']}",  # Display max_pp
+        move_button = Button(move_section, text=f"{move['move_name']}\nPP: {move['pp']}/{move['max_pp']}",
                              font=('Arial', 12), padx=10, pady=5, bg="white", fg="black", width=10,
                              command=lambda i=idx: player_move(i))
         move_button.grid(row=(1 + idx // 2), column=(1 + idx % 2), padx=10, pady=5)
@@ -197,6 +197,7 @@ def disable_move_buttons():
 def enable_move_buttons():
     for button in move_buttons:
         button.config(state=NORMAL)
+
 # Function to go to the Battle Summary page
 def go_to_battle_summary():
     # Clear current screen
@@ -212,10 +213,10 @@ def update_battle_log(message):
 
     # Create a frame for the battle log with a white background
     battle_frame = Frame(window, bg="white", padx=10, pady=10)  # Adding more padding to make the border thicker
-    battle_frame.place(x=30, y=320, width=350)  # Adjust width for a longer frame
+    battle_frame.place(x=30, y=320, width=350)  # Adjust width to 450 for Windows
 
     # Update the battle log message inside the frame
-    battle_log = Label(battle_frame, text=message, font=('Arial', 14), bg="white", fg="black", wraplength=500)
+    battle_log = Label(battle_frame, text=message, font=('Arial', 14), bg="white", fg="black", wraplength=500) #Adjust wraplength to 800 for Windows
     battle_log.pack()
 
 # Function to update HP labels on the screen
@@ -317,7 +318,7 @@ disclaimer_frame.pack(pady=20)
 disclaimer_label = Label(disclaimer_frame, text="DISCLAIMER", font=('Arial', 30, 'bold'), bg="black", fg="white")
 disclaimer_label.pack()
 
-disclaimer_text = Label(disclaimer_frame, text="This Pokémon Battle Simulator is a fan-made project and is not affiliated with or endorsed by Nintendo, Game Freak, or The Pokémon Company. All Pokémon characters and related assets are the property of their respective owners. This simulator is created purely for entertainment purposes and is free to use. No copyright infringement is intended.", wraplength=400)
+disclaimer_text = Label(disclaimer_frame, text="This Pokémon Battle Simulator is a fan-made project and is not affiliated with or endorsed by Nintendo, Game Freak, or The Pokémon Company. All Pokémon characters and related assets are the property of their respective owners. This simulator is created purely for entertainment purposes and is free to use. No copyright infringement is intended.", wraplength=400, bg="black", fg="white")
 disclaimer_text.pack()
 
 agree_button = Button(disclaimer_frame, text="AGREE", font=('Arial', 15), command=show_play_screen)
