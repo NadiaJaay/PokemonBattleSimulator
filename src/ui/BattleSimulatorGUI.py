@@ -29,7 +29,7 @@ def select_pokemon(pokemon_name):
 
 # Function to start the battle and show player vs computer Pokémon
 def start_battle_screen(player_pokemon_name):
-    global player_pokemon, computer_pokemon, turn, battle_log, computer_label, player_label
+    global player_pokemon, computer_pokemon, turn, battle_log, computer_label, player_label, move_buttons, moves
 
     # Clear current screen
     for widget in window.winfo_children():
@@ -77,7 +77,6 @@ def start_battle_screen(player_pokemon_name):
     if player_pokemon.name in pokemon_images:
         player_image_path = pokemon_images[player_pokemon.name]["back"]
         player_image = PhotoImage(file=player_image_path).zoom(2, 2)  # Zoom to double the size
-        # Adjust subsample for size
         player_image_label = Label(window, image=player_image, bg="#FFDD57")
         player_image_label.image = player_image  # Keep reference to prevent garbage collection
         player_image_label.place(x=80, y=200)  # Adjust placement for player's Pokémon
@@ -89,11 +88,6 @@ def start_battle_screen(player_pokemon_name):
 
     # Battle log
     battle_log = Label(window, text=f"{computer_pokemon['name']} appeared! Prepare for battle!",
-                       font=('Arial', 14), bg="#FFDD57", fg="black")
-
-
-    # Battle log - Display the message that a wild computer Pokémon appeared
-    battle_log = Label(window, text=f"A wild {computer_pokemon['name']} appeared!",
                        font=('Arial', 14), bg="#FFDD57", fg="black")
     battle_log.pack(pady=20)
 
@@ -107,21 +101,25 @@ def start_battle_screen(player_pokemon_name):
 
     # Moves as buttons for the player Pokémon
     moves = Pokemon.get_moves_for_pokemon(player_pokemon_name)
+    move_buttons = []  # Reset the move buttons list
 
-    # Add move buttons dynamically
+    # Add move buttons dynamically (use 'pp' for both current and max PP, but store max_pp separately)
     for idx, move in enumerate(moves):
-        move_button = Button(move_section, text=f"{move['move_name']}\nPP: {move['pp']}/{move['pp']}",
+        move['max_pp'] = move['pp']  # Store the maximum PP
+        move_button = Button(move_section, text=f"{move['move_name']}\nPP: {move['pp']}/{move['max_pp']}",  # Display max_pp
                              font=('Arial', 12), padx=10, pady=5, bg="white", fg="black", width=10,
-                             command=lambda m=move: player_move(m))
+                             command=lambda i=idx: player_move(i))
         move_button.grid(row=(1 + idx // 2), column=(1 + idx % 2), padx=10, pady=5)
-        move_buttons.append(move_button)  # Add the button to the global list
+        move_buttons.append(move_button)
 
     # Check if it's the computer's turn to start the battle
     if turn == 1:
         computer_move()
 
-def player_move(move):
+def player_move(move_index):
     global computer_pokemon
+
+    move = moves[move_index]
 
     # Check if the move still has PP
     if move['pp'] == 0:
@@ -143,8 +141,8 @@ def player_move(move):
     update_hp_labels()
 
     window.after(990, check_computer_fainted)
+
 def update_move_buttons():
-    """Update the display of move buttons to reflect the current PP."""
     for idx, move in enumerate(moves):
         button_text = f"{move['move_name']}\nPP: {move['pp']}/{move['max_pp']}"
         move_buttons[idx].config(text=button_text)
@@ -153,7 +151,7 @@ def update_move_buttons():
         if move['pp'] == 0:
             move_buttons[idx].config(state=DISABLED)
 
-#Function to check if computer's Pokémon fainted
+# Function to check if computer's Pokémon fainted
 def check_computer_fainted():
     if computer_pokemon['hp'] <= 0:
         update_battle_log(f"{computer_pokemon['name']} fainted! You win!")
@@ -199,7 +197,6 @@ def disable_move_buttons():
 def enable_move_buttons():
     for button in move_buttons:
         button.config(state=NORMAL)
-
 # Function to go to the Battle Summary page
 def go_to_battle_summary():
     # Clear current screen
