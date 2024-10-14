@@ -11,7 +11,7 @@ Name the file settings.json.
 Then, copy and paste the following configuration into the settings.json file:
 
 {
-    "python.pythonPath": "C:/Users/Nadia/AppData/Local/Programs/Python/Python313/python.exe",
+    "python.pythonPath": "insert your python path",
     "python.envFile": "${workspaceFolder}/.env",
     "terminal.integrated.env.windows": {
         "PYTHONPATH": "${workspaceFolder}/src"
