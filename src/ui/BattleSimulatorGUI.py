@@ -1,6 +1,6 @@
-# BattleSimulatorGUI.py
 from tkinter import *
 import pygame
+import random
 from models.pokemon import Pokemon  # Import the Pokemon model
 
 # window config
@@ -9,13 +9,222 @@ window.geometry("700x500")
 window.title("PokemonBattleSimulator")
 window.config(background="#FFDD57")
 
+# Global variables for battle state
+player_pokemon = None
+computer_pokemon = None
+turn = None
+battle_log = None
+computer_label = None
+player_label = None
+move_buttons = []
+moves = []
+
 # Function to handle Pokémon selection
 def select_pokemon(pokemon_name):
     # Clear current screen
     for widget in window.winfo_children():
         widget.destroy()
-    selected_label = Label(window, text=f"You selected {pokemon_name}!", font=('Arial', 30), fg='green')
-    selected_label.pack(pady=100)
+
+    start_battle_screen(pokemon_name)
+
+# Function to start the battle and show player vs computer Pokémon
+def start_battle_screen(player_pokemon_name):
+    global player_pokemon, computer_pokemon, turn, battle_log, computer_label, player_label
+
+    # Clear current screen
+    for widget in window.winfo_children():
+        widget.destroy()
+
+    # Get computer's random Pokémon
+    computer_pokemon = Pokemon.get_random_computer_pokemon()
+
+    # Player's Pokémon (fetch the selected Pokémon details from the DB)
+    player_pokemon = Pokemon.get_pokemon_by_name(player_pokemon_name)
+
+    # Randomly choose who goes first (0 for player, 1 for computer)
+    turn = random.choice([0, 1])
+
+    # Mapping of Pokémon names to their image paths
+    pokemon_images = {
+        "Pikachu": "../images/pikachu.png",
+        "Rayquaza": "../images/rayquaza.png",
+        "Gengar": "../images/gengar.png",
+        "Charizard": {
+            "back": "../images/charizard_back.png"
+        },
+        "Blastoise": {
+            "back": "../images/blastoise_back.png"
+        },
+        "Venusaur": {
+            "back": "../images/venusaur_back.png"
+        }
+    }
+
+    # Top-left: Computer Pokémon
+    computer_label = Label(window, text=f"{computer_pokemon['name']}\nHP: {computer_pokemon['hp']}",
+                           font=('Arial', 15), bg="white", fg="black", width=15)
+    computer_label.place(x=10, y=50)
+
+    # Display computer's Pokémon image
+    if computer_pokemon['name'] in pokemon_images:
+        opponent_image_path = pokemon_images[computer_pokemon['name']]
+        opponent_image = PhotoImage(file=opponent_image_path).subsample(9, 9)
+        opponent_image_label = Label(window, image=opponent_image, bg="#FFDD57")
+        opponent_image_label.image = opponent_image
+        opponent_image_label.place(x=480, y=100)
+
+    # Display player's Pokémon back image
+    if player_pokemon.name in pokemon_images:
+        player_image_path = pokemon_images[player_pokemon.name]["back"]
+        player_image = PhotoImage(file=player_image_path).zoom(2, 2)  # Zoom to double the size
+        # Adjust subsample for size
+        player_image_label = Label(window, image=player_image, bg="#FFDD57")
+        player_image_label.image = player_image  # Keep reference to prevent garbage collection
+        player_image_label.place(x=80, y=200)  # Adjust placement for player's Pokémon
+
+    # Right-bottom: Player's Pokémon and moves
+    player_label = Label(window, text=f"{player_pokemon.name}\nHP: {player_pokemon.hp}",
+                         font=('Arial', 15), bg="white", fg="black", width=15)
+    player_label.place(x=550, y=310)  # Position at the bottom-right
+
+    # Battle log
+    battle_log = Label(window, text=f"{computer_pokemon['name']} appeared! Prepare for battle!",
+                       font=('Arial', 14), bg="#FFDD57", fg="black")
+
+
+    # Battle log - Display the message that a wild computer Pokémon appeared
+    battle_log = Label(window, text=f"A wild {computer_pokemon['name']} appeared!",
+                       font=('Arial', 14), bg="#FFDD57", fg="black")
+    battle_log.pack(pady=20)
+
+    # Moves section
+    move_section = Frame(window, bg="#FFDD57")
+    move_section.pack(side=BOTTOM, pady=20)
+
+    # "What will [Pokémon] do?" label on the left
+    action_label = Label(window, text=f"What will {player_pokemon.name} do?", font=('Arial', 14), bg="#FFDD57", fg="black")
+    action_label.place(x=50, y=400)  # Adjusting placement to the left side
+
+    # Moves as buttons for the player Pokémon
+    moves = Pokemon.get_moves_for_pokemon(player_pokemon_name)
+
+    # Add move buttons dynamically
+    for idx, move in enumerate(moves):
+        move_button = Button(move_section, text=f"{move['move_name']}\nPP: {move['pp']}/{move['pp']}",
+                             font=('Arial', 12), padx=10, pady=5, bg="white", fg="black", width=10,
+                             command=lambda m=move: player_move(m))
+        move_button.grid(row=(1 + idx // 2), column=(1 + idx % 2), padx=10, pady=5)
+        move_buttons.append(move_button)  # Add the button to the global list
+
+    # Check if it's the computer's turn to start the battle
+    if turn == 1:
+        computer_move()
+
+def player_move(move):
+    global computer_pokemon
+
+    # Check if the move still has PP
+    if move['pp'] == 0:
+        update_battle_log(f"{player_pokemon.name}'s {move['move_name']} has no PP left! Please select a different move.")
+        return  # Don't allow the move if PP is zero
+
+    # Deduct one PP for the move
+    move['pp'] -= 1
+    update_move_buttons()  # Update PP on the move buttons
+
+    # Calculate damage using the move's power
+    damage = move.get('power', 0)  # Default to 0 if no power is provided
+    computer_pokemon['hp'] -= damage  # Reduce computer's Pokémon HP
+
+    # Log the player's move in the battle log
+    update_battle_log(f"{player_pokemon.name} used {move['move_name']}! It dealt {damage} damage!" if damage > 0 else f"{player_pokemon.name} used {move['move_name']}! It did no damage.")
+
+    # Update the HP labels in the UI
+    update_hp_labels()
+
+    window.after(990, check_computer_fainted)
+def update_move_buttons():
+    """Update the display of move buttons to reflect the current PP."""
+    for idx, move in enumerate(moves):
+        button_text = f"{move['move_name']}\nPP: {move['pp']}/{move['max_pp']}"
+        move_buttons[idx].config(text=button_text)
+
+        # Disable the button if PP is zero
+        if move['pp'] == 0:
+            move_buttons[idx].config(state=DISABLED)
+
+#Function to check if computer's Pokémon fainted
+def check_computer_fainted():
+    if computer_pokemon['hp'] <= 0:
+        update_battle_log(f"{computer_pokemon['name']} fainted! You win!")
+        window.after(1000, go_to_battle_summary)
+    else:
+        # Computer takes a turn if it hasn't fainted
+        disable_move_buttons()
+        computer_move()
+
+# Function to handle computer's move
+def computer_move():
+    global player_pokemon
+
+    # Get a random move for the computer's Pokémon
+    moves = Pokemon.get_moves_for_pokemon(computer_pokemon['name'])
+    move = random.choice(moves)
+
+    # Calculate damage and reduce player's HP
+    damage = move.get('power', 0)
+    player_pokemon.hp -= damage
+
+    # Log the computer's move
+    update_battle_log(f"{computer_pokemon['name']} used {move['move_name']}! It dealt {damage} damage!" if damage > 0 else f"{computer_pokemon['name']} used {move['move_name']}! It did no damage.")
+
+    # Update HP labels in the UI
+    update_hp_labels()
+
+    # Delay before checking if the player's Pokémon has fainted
+    window.after(990, check_player_fainted)
+
+# Function to check if player's Pokémon fainted
+def check_player_fainted():
+    if player_pokemon.hp <= 0:
+        update_battle_log(f"{player_pokemon.name} fainted! You lose!")
+        window.after(1000, go_to_battle_summary)
+    else:
+        enable_move_buttons()
+
+def disable_move_buttons():
+    for button in move_buttons:
+        button.config(state=DISABLED)
+
+def enable_move_buttons():
+    for button in move_buttons:
+        button.config(state=NORMAL)
+
+# Function to go to the Battle Summary page
+def go_to_battle_summary():
+    # Clear current screen
+    for widget in window.winfo_children():
+        widget.destroy()
+
+    # Placeholder for Battle Summary screen
+    label = Label(window, text="Battle Summary (TBD)", font=("Ariel", 40), bg="#FFDD57", fg="black")
+    label.pack(pady=100)
+
+# Function to update the battle log with messages
+def update_battle_log(message):
+
+    # Create a frame for the battle log with a white background
+    battle_frame = Frame(window, bg="white", padx=10, pady=10)  # Adding more padding to make the border thicker
+    battle_frame.place(x=30, y=320, width=350)  # Adjust width for a longer frame
+
+    # Update the battle log message inside the frame
+    battle_log = Label(battle_frame, text=message, font=('Arial', 14), bg="white", fg="black", wraplength=500)
+    battle_log.pack()
+
+# Function to update HP labels on the screen
+def update_hp_labels():
+    computer_label.config(text=f"{computer_pokemon['name']}\nHP: {computer_pokemon['hp']}")
+    player_label.config(text=f"{player_pokemon.name}\nHP: {player_pokemon.hp}")
 
 # Function to start the battle and show Pokémon selection buttons
 def start_battle():
@@ -29,7 +238,7 @@ def start_battle():
     label = Label(window, text="Select a Pokémon...", font=("Ariel", 40), bg="#FFDD57", fg="black")
     label.pack(side=BOTTOM, padx=70, pady=100)
 
-    # Add pokemon image buttons
+    # Add Pokémon image buttons
     for pokemon in pokemon_options:
         if pokemon.name == "Charizard":
             charizard_image = PhotoImage(file="../images/charizard.png").subsample(5, 5)
@@ -70,6 +279,7 @@ def show_play_screen():
 
     # Create Play Screen with a Play Button
     pygame.mixer.init()
+
     def play_music():
         pygame.mixer.music.load("../sfx/10 Relic Song.mp3")
         pygame.mixer.music.play(-1)
@@ -107,10 +317,10 @@ battle_img_label.pack()
 disclaimer_frame = Frame(window, bd=2, relief="solid", padx=10, pady=10, bg="black")
 disclaimer_frame.pack(pady=20)
 
-disclaimer_label = Label(disclaimer_frame, text="DISCLAIMER", font=('Arial', 30, 'bold'), bg="black", fg="white" )
+disclaimer_label = Label(disclaimer_frame, text="DISCLAIMER", font=('Arial', 30, 'bold'), bg="black", fg="white")
 disclaimer_label.pack()
 
-disclaimer_text = Label(disclaimer_frame, text="This Pokémon Battle Simulator is a fan-made project and is not affiliated with or endorsed by Nintendo, Game Freak, or The Pokémon Company. All Pokémon characters and related assets are the property of their respective owners. This simulator is created purely for entertainment purposes and is free to use. No copyright infringement is intended.", wraplength=400, bg="black", fg="white" )
+disclaimer_text = Label(disclaimer_frame, text="This Pokémon Battle Simulator is a fan-made project and is not affiliated with or endorsed by Nintendo, Game Freak, or The Pokémon Company. All Pokémon characters and related assets are the property of their respective owners. This simulator is created purely for entertainment purposes and is free to use. No copyright infringement is intended.", wraplength=400)
 disclaimer_text.pack()
 
 agree_button = Button(disclaimer_frame, text="AGREE", font=('Arial', 15), command=show_play_screen)
