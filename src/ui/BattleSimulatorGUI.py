@@ -1,11 +1,18 @@
 from tkinter import *
 import pygame
 import random
+import os
 from models.pokemon import Pokemon  # Import the Pokemon model
+
+# Get the base directory of the script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Path to the images folder
+IMAGE_DIR = os.path.join(BASE_DIR, "../images")
 
 # window config
 window = Tk()
-window.geometry("700x500") #use 800x520 for windows
+window.geometry("700x500")  # use 800x520 for windows
 window.title("PokemonBattleSimulator")
 window.config(background="#FFDD57")
 
@@ -44,19 +51,19 @@ def start_battle_screen(player_pokemon_name):
     # Randomly choose who goes first (0 for player, 1 for computer)
     turn = random.choice([0, 1])
 
-    # Mapping of Pokémon names to their image paths
+    # Mapping of Pokémon names to their image paths using dynamic paths
     pokemon_images = {
-        "Pikachu": "../images/pikachu.png",
-        "Rayquaza": "../images/rayquaza.png",
-        "Gengar": "../images/gengar.png",
+        "Pikachu": os.path.join(IMAGE_DIR, "pikachu.png"),
+        "Rayquaza": os.path.join(IMAGE_DIR, "rayquaza.png"),
+        "Gengar": os.path.join(IMAGE_DIR, "gengar.png"),
         "Charizard": {
-            "back": "../images/charizard_back.png"
+            "back": os.path.join(IMAGE_DIR, "charizard_back.png")
         },
         "Blastoise": {
-            "back": "../images/blastoise_back.png"
+            "back": os.path.join(IMAGE_DIR, "blastoise_back.png")
         },
         "Venusaur": {
-            "back": "../images/venusaur_back.png"
+            "back": os.path.join(IMAGE_DIR, "venusaur_back.png")
         }
     }
 
@@ -216,7 +223,7 @@ def update_battle_log(message):
     battle_frame.place(x=30, y=320, width=350)  # Adjust width to 450 for Windows
 
     # Update the battle log message inside the frame
-    battle_log = Label(battle_frame, text=message, font=('Arial', 14), bg="white", fg="black", wraplength=500) #Adjust wraplength to 800 for Windows
+    battle_log = Label(battle_frame, text=message, font=('Arial', 14), bg="white", fg="black", wraplength=500)  # Adjust wraplength to 800 for Windows
     battle_log.pack()
 
 # Function to update HP labels on the screen
@@ -239,17 +246,17 @@ def start_battle():
     # Add Pokémon image buttons
     for pokemon in pokemon_options:
         if pokemon.name == "Charizard":
-            charizard_image = PhotoImage(file="../images/charizard.png").subsample(5, 5)
+            charizard_image = PhotoImage(file=os.path.join(IMAGE_DIR, "charizard.png")).subsample(5, 5)
             charizard_button = Button(window, image=charizard_image, bg="#FFDD57", command=lambda p=pokemon.name: select_pokemon(p))
             charizard_button.image = charizard_image
             charizard_button.pack(side=LEFT, padx=45)
         elif pokemon.name == "Blastoise":
-            blastoise_image = PhotoImage(file="../images/blastoise.png").subsample(8, 8)
+            blastoise_image = PhotoImage(file=os.path.join(IMAGE_DIR, "blastoise.png")).subsample(8, 8)
             blastoise_button = Button(window, image=blastoise_image, bg="#FFDD57", command=lambda p=pokemon.name: select_pokemon(p))
             blastoise_button.image = blastoise_image
             blastoise_button.pack(side=LEFT, padx=45)
         elif pokemon.name == "Venusaur":
-            venusaur_image = PhotoImage(file="../images/venusaur.png").subsample(8, 8)
+            venusaur_image = PhotoImage(file=os.path.join(IMAGE_DIR, "venusaur.png")).subsample(8, 8)
             venusaur_button = Button(window, image=venusaur_image, bg="#FFDD57", command=lambda p=pokemon.name: select_pokemon(p))
             venusaur_button.image = venusaur_image
             venusaur_button.pack(side=LEFT, padx=45)
@@ -260,17 +267,17 @@ def show_play_screen():
     for widget in window.winfo_children():
         widget.destroy()
 
-    logo_image_play = PhotoImage(file="../images/PokemonLogo.png")
+    logo_image_play = PhotoImage(file=os.path.join(IMAGE_DIR, "PokemonLogo.png"))
     logo_label_play = Label(window, image=logo_image_play, bg="#FFDD57")
     logo_label_play.image = logo_image_play
     logo_label_play.pack()
 
-    logo_image_play = PhotoImage(file="../images/BattleImg.png")
-    logo_label_play = Label(window, image=logo_image_play, bg="#FFDD57")
-    logo_label_play.image = logo_image_play
-    logo_label_play.pack()
+    battle_img = PhotoImage(file=os.path.join(IMAGE_DIR, "BattleImg.png"))
+    battle_img_label = Label(window, image=battle_img, bg="#FFDD57")
+    battle_img_label.image = battle_img
+    battle_img_label.pack()
 
-    pokemon_image_play = PhotoImage(file="../images/umbreon.png").subsample(5, 5)
+    pokemon_image_play = PhotoImage(file=os.path.join(IMAGE_DIR, "umbreon.png")).subsample(5, 5)
     pokemon_label_play = Label(window, image=pokemon_image_play, bg="#FFDD57")
     pokemon_label_play.image = pokemon_image_play
     pokemon_label_play.pack()
@@ -279,7 +286,7 @@ def show_play_screen():
     pygame.mixer.init()
 
     def play_music():
-        pygame.mixer.music.load("../sfx/10 Relic Song.mp3")
+        pygame.mixer.music.load(os.path.join(BASE_DIR, "../sfx/10 Relic Song.mp3"))
         pygame.mixer.music.play(-1)
 
     def stop_music():
@@ -291,7 +298,7 @@ def show_play_screen():
         else:
             play_music()
 
-    sound_img = PhotoImage(file="../images/sound.png").subsample(20, 20)
+    sound_img = PhotoImage(file=os.path.join(IMAGE_DIR, "sound.png")).subsample(20, 20)
     sound_button = Button(window, image=sound_img, command=toggle_music, bg="#FFDD57", borderwidth=0, highlightthickness=0)
     sound_button.image = sound_img
     sound_button.pack(side=LEFT, padx=10)
@@ -301,12 +308,12 @@ def show_play_screen():
 
 # ---------------------
 # Load logo and disclaimer
-logo_path = "../images/PokemonLogo.png"
+logo_path = os.path.join(IMAGE_DIR, "PokemonLogo.png")
 logo_image = PhotoImage(file=logo_path)
 logo_label = Label(window, image=logo_image, bg="#FFDD57")
 logo_label.pack()
 
-battle_img_path = "../images/BattleImg.png"
+battle_img_path = os.path.join(IMAGE_DIR, "BattleImg.png")
 battle_img = PhotoImage(file=battle_img_path)
 battle_img_label = Label(window, image=battle_img, bg="#FFDD57")
 battle_img_label.pack()
