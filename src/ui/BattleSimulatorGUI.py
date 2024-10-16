@@ -1,18 +1,18 @@
 from tkinter import *
+from tkinter import messagebox
+from models.pokemon import Pokemon  # Import the Pokemon model
+
 import pygame
 import random
 import os
-from models.pokemon import Pokemon  # Import the Pokemon model
 
 # Get the base directory of the script
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Path to the images folder
 IMAGE_DIR = os.path.join(BASE_DIR, "../images")
 
 # window config
 window = Tk()
-window.geometry("700x500")  # use 800x520 for windows
+window.geometry("700x500")
 window.title("PokemonBattleSimulator")
 window.config(background="#FFDD57")
 
@@ -86,7 +86,7 @@ def start_battle_screen(player_pokemon_name):
         player_image = PhotoImage(file=player_image_path).zoom(2, 2)
         player_image_label = Label(window, image=player_image, bg="#FFDD57")
         player_image_label.image = player_image
-        player_image_label.place(x=80, y=200)  # Adjust placement for player's Pokémon
+        player_image_label.place(x=80, y=200)
 
     # Right-bottom: Player's Pokémon and moves
     player_label = Label(window, text=f"{player_pokemon.name}\nHP: {player_pokemon.hp}",
@@ -102,11 +102,10 @@ def start_battle_screen(player_pokemon_name):
     move_section = Frame(window, bg="#FFDD57")
     move_section.pack(side=BOTTOM, pady=20)
 
-    # "What will [Pokémon] do?" label on the left
     action_label = Label(window, text=f"What will {player_pokemon.name} do?", font=('Arial', 14), bg="#FFDD57", fg="black")
     action_label.place(x=50, y=400)
 
-    # Moves as buttons for the player Pokémon
+    # Moves buttons
     moves = Pokemon.get_moves_for_pokemon(player_pokemon_name)
     move_buttons = []  # Reset the move buttons list
 
@@ -164,7 +163,6 @@ def check_computer_fainted():
         update_battle_log(f"{computer_pokemon['name']} fainted! You win!")
         window.after(1000, go_to_battle_summary)
     else:
-        # Computer takes a turn if it hasn't fainted
         disable_move_buttons()
         computer_move()
 
@@ -219,11 +217,11 @@ def go_to_battle_summary():
 def update_battle_log(message):
 
     # Create a frame for the battle log with a white background
-    battle_frame = Frame(window, bg="white", padx=10, pady=10)  # Adding more padding to make the border thicker
-    battle_frame.place(x=30, y=320, width=350)  # Adjust width to 450 for Windows
+    battle_frame = Frame(window, bg="white", padx=10, pady=10)
+    battle_frame.place(x=30, y=320, width=500)
 
     # Update the battle log message inside the frame
-    battle_log = Label(battle_frame, text=message, font=('Arial', 14), bg="white", fg="black", wraplength=500)  # Adjust wraplength to 800 for Windows
+    battle_log = Label(battle_frame, text=message, font=('Arial', 14), bg="white", fg="black", wraplength=800)
     battle_log.pack()
 
 # Function to update HP labels on the screen
@@ -282,6 +280,11 @@ def show_play_screen():
     pokemon_label_play.image = pokemon_image_play
     pokemon_label_play.pack()
 
+    settings_img = PhotoImage(file=os.path.join(IMAGE_DIR, "settings.png")).subsample(35, 35)
+    settings_button = Button(window, image=settings_img, command=show_settings_page, bg="#FFDD57", borderwidth=0, highlightthickness=0)
+    settings_button.image = settings_img
+    settings_button.pack(side=RIGHT, padx=10)
+
     # Create Play Screen with a Play Button
     pygame.mixer.init()
 
@@ -330,5 +333,43 @@ disclaimer_text.pack()
 
 agree_button = Button(disclaimer_frame, text="AGREE", font=('Arial', 15), command=show_play_screen)
 agree_button.pack(pady=20)
+
+# ---------------------
+def show_settings_page():
+    # Clear current screen
+    for widget in window.winfo_children():
+        widget.destroy()
+
+    label = Label(window, text="Select Window Size", font=("Arial", 20), bg="#FFDD57", fg="black")
+    label.pack(pady=20)
+
+    # Mac button
+    mac_button = Button(window, text="Mac (700x500)", font=("Arial", 15), command=set_mac_size, bg="white", fg="black", width=20)
+    mac_button.pack(pady=10)
+
+    # Windows button
+    windows_button = Button(window, text="Windows (800x520)", font=("Arial", 15), command=set_windows_size, bg="white", fg="black", width=20)
+    windows_button.pack(pady=10)
+
+    # Linux button
+    linux_button = Button(window, text="Linux (800x520)", font=("Arial", 15), command=set_windows_size, bg="white", fg="black", width=20)
+    linux_button.pack(pady=10)
+
+    # Back button to return to main screen
+    back_button = Button(window, text="Back", font=("Arial", 12), command=show_play_screen, bg="white", fg="black", width=10)
+    back_button.pack(pady=20)
+
+# Functions to set window sizes
+def set_mac_size():
+    window.geometry("700x500")
+    messagebox.showinfo("Settings", "Window size set to Mac (700x500)")
+
+def set_windows_size():
+    window.geometry("800x520")
+    messagebox.showinfo("Settings", "Window size set to Windows (800x520)")
+
+def set_linux_size():
+    window.geometry("900x600")
+    messagebox.showinfo("Settings", "Window size set to Linux (900x600)")
 
 window.mainloop()
