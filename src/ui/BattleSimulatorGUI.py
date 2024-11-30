@@ -16,6 +16,23 @@ window.geometry("700x500")
 window.title("PokemonBattleSimulator")
 window.config(background="#FFDD57")
 
+pygame.mixer.init()
+
+def play_music():
+    pygame.mixer.music.load(os.path.join(BASE_DIR, "../sfx/10 Relic Song.mp3"))
+    pygame.mixer.music.play(-1)
+
+def stop_music():
+    pygame.mixer.music.stop()
+
+def toggle_music():
+    if pygame.mixer.music.get_busy():
+        stop_music()
+    else:
+        play_music()
+
+play_music()
+
 # Global variables for battle state
 player_pokemon = None
 computer_pokemon = None
@@ -25,6 +42,7 @@ computer_label = None
 player_label = None
 move_buttons = []
 moves = []
+turn_count = 0
 
 # Function to handle Pokémon selection
 def select_pokemon(pokemon_name):
@@ -44,8 +62,9 @@ def start_battle_screen(player_pokemon_name):
 
     # Get computer's random Pokémon
     computer_pokemon = Pokemon.get_random_computer_pokemon()
+    computer_pokemon['moves'] = Pokemon.get_moves_for_pokemon(computer_pokemon['name'])
 
-    # Player's Pokémon (fetch the selected Pokémon details from the DB)
+# Player's Pokémon (fetch the selected Pokémon details from the DB)
     player_pokemon = Pokemon.get_pokemon_by_name(player_pokemon_name)
 
     # Randomly choose who goes first (0 for player, 1 for computer)
@@ -56,6 +75,9 @@ def start_battle_screen(player_pokemon_name):
         "Pikachu": os.path.join(IMAGE_DIR, "pikachu.png"),
         "Rayquaza": os.path.join(IMAGE_DIR, "rayquaza.png"),
         "Gengar": os.path.join(IMAGE_DIR, "gengar.png"),
+        "Mewtwo": os.path.join(IMAGE_DIR, "Mewtwo.png"),
+        "Lapras": os.path.join(IMAGE_DIR, "Lapras.png"),
+        "Giratina": os.path.join(IMAGE_DIR, "Giratina.png"),
         "Charizard": {
             "back": os.path.join(IMAGE_DIR, "charizard_back.png")
         },
@@ -64,6 +86,15 @@ def start_battle_screen(player_pokemon_name):
         },
         "Venusaur": {
             "back": os.path.join(IMAGE_DIR, "venusaur_back.png")
+        },
+        "Groudon": {
+            "back": os.path.join(IMAGE_DIR, "groudon_back.png")
+        },
+        "Raichu": {
+            "back": os.path.join(IMAGE_DIR, "raichu_back.png")
+        },
+        "Nidoqueen": {
+            "back": os.path.join(IMAGE_DIR, "nidoqueen_back.png")
         }
     }
 
@@ -124,7 +155,8 @@ def start_battle_screen(player_pokemon_name):
 
 def player_move(move_index):
     global computer_pokemon
-
+    global computer_pokemon, turn_count
+    turn_count += 1  # Increment turn count each time a move is made
     move = moves[move_index]
 
     # Check if the move still has PP
@@ -139,14 +171,14 @@ def player_move(move_index):
     # Calculate damage using the move's power
     damage = move.get('power', 0)  # Default to 0 if no power is provided
     computer_pokemon['hp'] -= damage  # Reduce computer's Pokémon HP
-
+    computer_pokemon['hp'] = max(0, computer_pokemon['hp'])
     # Log the player's move in the battle log
     update_battle_log(f"{player_pokemon.name} used {move['move_name']}! It dealt {damage} damage!" if damage > 0 else f"{player_pokemon.name} used {move['move_name']}! It did no damage.")
 
     # Update the HP labels in the UI
     update_hp_labels()
 
-    window.after(990, check_computer_fainted)
+    window.after(1000, check_computer_fainted)
 
 def update_move_buttons():
     for idx, move in enumerate(moves):
@@ -161,37 +193,54 @@ def update_move_buttons():
 def check_computer_fainted():
     if computer_pokemon['hp'] <= 0:
         update_battle_log(f"{computer_pokemon['name']} fainted! You win!")
-        window.after(1000, go_to_battle_summary)
+        window.after(2000, lambda: go_to_battle_summary("You Won"))
+
     else:
         disable_move_buttons()
-        computer_move()
+        window.after(2000, computer_move) #added delay between player and computers turns
+        #computer_move()
 
-# Function to handle computer's move
 def computer_move():
     global player_pokemon
 
-    # Get a random move for the computer's Pokémon
-    moves = Pokemon.get_moves_for_pokemon(computer_pokemon['name'])
-    move = random.choice(moves)
+    # Use the tracked moves in the `computer_pokemon` object
+    moves = computer_pokemon['moves']
 
-    # Calculate damage and reduce player's HP
+    # Filter moves to only include those with PP > 0
+    available_moves = [move for move in moves if move['pp'] > 0]
+
+    # Check if there are any valid moves left
+    if not available_moves:
+        update_battle_log(f"{computer_pokemon['name']} has no moves left! It skips its turn.")
+        enable_move_buttons()  # Re-enable the player's move buttons
+        return
+
+    # Randomly select a move from the available moves
+    move = random.choice(available_moves)
+
+    # Deduct one PP from the selected move
+    move['pp'] -= 1
+
+    # Calculate damage and reduce player's Pokémon HP
     damage = move.get('power', 0)
     player_pokemon.hp -= damage
+    player_pokemon.hp = max(0, player_pokemon.hp)  # Ensure HP doesn't drop below 0
 
     # Log the computer's move
     update_battle_log(f"{computer_pokemon['name']} used {move['move_name']}! It dealt {damage} damage!" if damage > 0 else f"{computer_pokemon['name']} used {move['move_name']}! It did no damage.")
 
-    # Update HP labels in the UI
+    # Update HP labels on the screen
     update_hp_labels()
 
     # Delay before checking if the player's Pokémon has fainted
-    window.after(990, check_player_fainted)
+    window.after(2000, check_player_fainted)
 
 # Function to check if player's Pokémon fainted
 def check_player_fainted():
     if player_pokemon.hp <= 0:
         update_battle_log(f"{player_pokemon.name} fainted! You lose!")
-        window.after(1000, go_to_battle_summary)
+        window.after(2000, lambda: go_to_battle_summary("You Lost"))
+
     else:
         enable_move_buttons()
 
@@ -204,14 +253,36 @@ def enable_move_buttons():
         button.config(state=NORMAL)
 
 # Function to go to the Battle Summary page
-def go_to_battle_summary():
+def go_to_battle_summary(outcome):
+    global turn_count
+
     # Clear current screen
     for widget in window.winfo_children():
         widget.destroy()
 
-    # Placeholder for Battle Summary screen
-    label = Label(window, text="Battle Summary (TBD)", font=("Ariel", 40), bg="#FFDD57", fg="black")
-    label.pack(pady=100)
+    # Create a white frame for the summary box
+    summary_frame = Frame(window, bg="white", bd=2, relief="solid", padx=100, pady=20, width=600)
+    summary_frame.place(relx=0.5, rely=0.5, anchor=CENTER)
+
+    # Add the battle summary details inside the frame
+    label = Label(summary_frame, text="Battle Summary", font=("Arial", 30, "bold"), bg="white", fg="black")
+    label.pack(pady=10)
+
+    outcome_label = Label(summary_frame, text=f"Outcome: {outcome}", font=("Arial", 20), bg="white", fg="black")
+    outcome_label.pack(pady=5)
+
+    player_label = Label(summary_frame, text=f"Player's Pokémon: {player_pokemon.name}", font=("Arial", 20), bg="white", fg="black")
+    player_label.pack(pady=5)
+
+    computer_label = Label(summary_frame, text=f"Computer's Pokémon: {computer_pokemon['name']}", font=("Arial", 20), bg="white", fg="black")
+    computer_label.pack(pady=5)
+
+    turns_label = Label(summary_frame, text=f"Turns Taken: {turn_count}", font=("Arial", 20), bg="white", fg="black")
+    turns_label.pack(pady=5)
+
+    # Add a Home button inside the frame
+    home_button = Button(summary_frame, text="Home", font=("Arial", 15), command=show_play_screen, bg="#FFDD57", fg="black", width=10)
+    home_button.pack(pady=20)
 
 # Function to update the battle log with messages
 def update_battle_log(message):
@@ -231,6 +302,8 @@ def update_hp_labels():
 
 # Function to start the battle and show Pokémon selection buttons
 def start_battle():
+    global player_pokemon, computer_pokemon, turn, battle_log, computer_label, player_label, move_buttons, moves, turn_count
+    turn_count = 0
     # Clear current screen
     for widget in window.winfo_children():
         widget.destroy()
@@ -241,23 +314,28 @@ def start_battle():
     label = Label(window, text="Select a Pokémon...", font=("Ariel", 40), bg="#FFDD57", fg="black")
     label.pack(side=BOTTOM, padx=70, pady=100)
 
-    # Add Pokémon image buttons
-    for pokemon in pokemon_options:
-        if pokemon.name == "Charizard":
-            charizard_image = PhotoImage(file=os.path.join(IMAGE_DIR, "charizard.png")).subsample(5, 5)
-            charizard_button = Button(window, image=charizard_image, bg="#FFDD57", command=lambda p=pokemon.name: select_pokemon(p))
-            charizard_button.image = charizard_image
-            charizard_button.pack(side=LEFT, padx=45)
-        elif pokemon.name == "Blastoise":
-            blastoise_image = PhotoImage(file=os.path.join(IMAGE_DIR, "blastoise.png")).subsample(8, 8)
-            blastoise_button = Button(window, image=blastoise_image, bg="#FFDD57", command=lambda p=pokemon.name: select_pokemon(p))
-            blastoise_button.image = blastoise_image
-            blastoise_button.pack(side=LEFT, padx=45)
-        elif pokemon.name == "Venusaur":
-            venusaur_image = PhotoImage(file=os.path.join(IMAGE_DIR, "venusaur.png")).subsample(8, 8)
-            venusaur_button = Button(window, image=venusaur_image, bg="#FFDD57", command=lambda p=pokemon.name: select_pokemon(p))
-            venusaur_button.image = venusaur_image
-            venusaur_button.pack(side=LEFT, padx=45)
+    # Mapping Pokémon names to their images and subsample values
+    pokemon_images = {
+        "Charizard": (os.path.join(IMAGE_DIR, "charizard.png"), 7),
+        "Blastoise": (os.path.join(IMAGE_DIR, "blastoise.png"), 10),
+        "Venusaur": (os.path.join(IMAGE_DIR, "venusaur.png"), 10),
+        "Raichu": (os.path.join(IMAGE_DIR, "raichu.png"), 8),
+        "Groudon": (os.path.join(IMAGE_DIR, "groudon.png"), 10),
+        "Nidoqueen": (os.path.join(IMAGE_DIR, "nidoqueen.png"), 9)
+    }
+
+    # Create a frame for the Pokémon selection grid
+    pokemon_frame = Frame(window, bg="#FFDD57")
+    pokemon_frame.pack()
+
+    # Add Pokémon image buttons in a 2-row layout (3 per row)
+    for idx, pokemon in enumerate(pokemon_options):
+        if pokemon.name in pokemon_images:
+            image_path, subsample_value = pokemon_images[pokemon.name]
+            pokemon_image = PhotoImage(file=image_path).subsample(subsample_value, subsample_value)
+            pokemon_button = Button(pokemon_frame, image=pokemon_image, bg="#FFDD57", command=lambda p=pokemon.name: select_pokemon(p))
+            pokemon_button.image = pokemon_image  # Keep a reference to avoid garbage collection
+            pokemon_button.grid(row=idx // 3, column=idx % 3, padx=20, pady=10)
 
 # Function to show the play screen after agreeing to the disclaimer
 def show_play_screen():
@@ -286,20 +364,6 @@ def show_play_screen():
     settings_button.pack(side=RIGHT, padx=10)
 
     # Create Play Screen with a Play Button
-    pygame.mixer.init()
-
-    def play_music():
-        pygame.mixer.music.load(os.path.join(BASE_DIR, "../sfx/10 Relic Song.mp3"))
-        pygame.mixer.music.play(-1)
-
-    def stop_music():
-        pygame.mixer.music.stop()
-
-    def toggle_music():
-        if pygame.mixer.music.get_busy():
-            stop_music()
-        else:
-            play_music()
 
     sound_img = PhotoImage(file=os.path.join(IMAGE_DIR, "sound.png")).subsample(20, 20)
     sound_button = Button(window, image=sound_img, command=toggle_music, bg="#FFDD57", borderwidth=0, highlightthickness=0)
@@ -352,7 +416,7 @@ def show_settings_page():
     windows_button.pack(pady=10)
 
     # Linux button
-    linux_button = Button(window, text="Linux (800x520)", font=("Arial", 15), command=set_windows_size, bg="white", fg="black", width=20)
+    linux_button = Button(window, text="Linux (900x600)", font=("Arial", 15), command=set_linux_size, bg="white", fg="black", width=20)
     linux_button.pack(pady=10)
 
     # Back button to return to main screen

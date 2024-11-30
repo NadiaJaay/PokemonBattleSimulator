@@ -1,4 +1,3 @@
-import sqlite3
 import random
 from db_conn.db_conn import get_connection
 
@@ -11,7 +10,7 @@ class Pokemon:
     def get_pokemon_list():
         connection = get_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT name, hp FROM pokemon LIMIT 3")
+        cursor.execute("SELECT name, hp FROM pokemon LIMIT 6")
         rows = cursor.fetchall()
         pokemon_list = [Pokemon(name=row[0], hp=row[1]) for row in rows]
         connection.close()
@@ -21,9 +20,9 @@ class Pokemon:
     def get_random_computer_pokemon():
         connection = get_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT name, hp FROM pokemon ORDER BY pokemon_id DESC LIMIT 3")  # Get the last 3 Pokémon
+        cursor.execute("SELECT name, hp FROM pokemon ORDER BY pokemon_id DESC LIMIT 6")  # Get the last 3 Pokémon
         rows = cursor.fetchall()
-        random_pokemon = random.choice(rows)  # Pick a random Pokémon from the last 3
+        random_pokemon = random.choice(rows)  # Pick a random Pokémon from the last 6
         connection.close()
         return {'name': random_pokemon[0], 'hp': random_pokemon[1]}
 

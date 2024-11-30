@@ -16,7 +16,7 @@ class BattleManager:
         return None
 
     def apply_damage(self, attacking_pokemon, defending_pokemon, move):
-        damage = move['power']  # Assuming 'power' is the damage value
+        damage = move['power']
         defending_pokemon.hp -= damage
         return defending_pokemon.hp
 
