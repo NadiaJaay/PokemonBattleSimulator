@@ -81,11 +81,11 @@ def insert_initial_data():
     cursor.execute('''
         INSERT OR IGNORE INTO move (move_name, power, pp)
         VALUES 
-        ('Growl', 0, 15), 
+        ('Growl', 0, 5), 
         ('Flamethrower', 65, 5), 
         ('Dig', 35, 2), 
         ('Fly', 25, 3),
-        ('Dragon Dance', 0, 10),
+        ('Dragon Dance', 0, 5),
         ('Outrage', 70, 2),
         ('Earthquake', 80, 1),
         ('Surf', 50, 5),
@@ -95,13 +95,13 @@ def insert_initial_data():
         ('Psychic', 70, 1),
         ('Hypnosis', 0, 5),
         ('Razor Leaf', 40, 2),
-        ('Sludge Bomb', 0, 5),
+        ('Sludge Bomb', 0, 3),
         ('Solar Beam', 33, 1),
         ('Thunderbolt', 40, 2),
         ('Quick Attack', 25, 5),
         ('Thunder', 50, 2),
         ('Mud Shot', 25, 2), -- 20
-        ('Calm Mind', 0, 5);
+        ('Calm Mind', 0, 3);
     ''')
 
     # Insert Pokémon moves
@@ -144,7 +144,7 @@ def insert_initial_data():
         (6, 11),  -- Nidoqueen -> Shadow ball
         (6, 10),  -- Nidoqueen -> Bite
         (6, 7),  -- Nidoqueen -> Earthquake
-        (9, 15),  -- Mewtwo -> Thunderbolt
+        (9, 17),  -- Mewtwo -> Thunderbolt
         (9, 12),  -- Mewtwo -> Psychic
         (9, 21),  -- Mewtwo -> Calm Mind
         (9, 9),  -- Mewtwo -> Ice Beam
@@ -156,7 +156,7 @@ def insert_initial_data():
         (11, 18),  -- Lapras -> Quick Attack
         (11, 19),  -- Lapras -> Thunder
         (11, 9);  -- Lapras -> Ice Beam
-        --set random moves for 4, 5, 6, 9, 10,11 tbd
+  
     ''')
 
     conn.commit()
